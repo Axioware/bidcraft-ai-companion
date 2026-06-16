@@ -152,4 +152,6 @@ function Index() {
           </div>
         </section>
       )}
+    </div>
+  );
 }
