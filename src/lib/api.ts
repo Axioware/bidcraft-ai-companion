@@ -55,6 +55,57 @@ export async function seedBid(payload: JobPayload & { bid_text: string }) {
   return res.json() as Promise<{ job_id: string; bid_id: string; message: string }>;
 }
 
+export interface Prompt {
+  id: string;
+  type: string;
+  prompt: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchPrompts(): Promise<Prompt[]> {
+  const res = await fetch(`${API_BASE}/api/v1/prompts`);
+  if (!res.ok) throw new Error("Failed to fetch prompts");
+  return res.json();
+}
+
+export async function updatePrompt(id: string, prompt: string): Promise<Prompt> {
+  const res = await fetch(`${API_BASE}/api/v1/prompts/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!res.ok) throw new Error("Failed to update prompt");
+  return res.json();
+}
+
+export async function createPrompt(type: string, prompt: string): Promise<Prompt> {
+  const res = await fetch(`${API_BASE}/api/v1/prompts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, prompt }),
+  });
+  if (!res.ok) throw new Error("Failed to create prompt");
+  return res.json();
+}
+
+export interface MemoryEntry {
+  id: string;
+  job_id: string | null;
+  bid_id: string | null;
+  user_message: string;
+  ai_response: string;
+  memory_type: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export async function fetchMemory(skip = 0, limit = 20): Promise<MemoryEntry[]> {
+  const res = await fetch(`${API_BASE}/api/v1/memory?skip=${skip}&limit=${limit}`);
+  if (!res.ok) throw new Error("Failed to fetch memory");
+  return res.json();
+}
+
 export interface StreamEvent {
   type: "chunk" | "done";
   content?: string;
