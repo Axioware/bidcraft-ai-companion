@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Wand2, Bookmark, History, Sparkles } from "lucide-react";
+import { Wand2, Bookmark, History, Sparkles, SlidersHorizontal, Database } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +16,8 @@ const items = [
   { title: "Generate", url: "/", icon: Wand2 },
   { title: "Add Reference", url: "/seed", icon: Bookmark },
   { title: "History", url: "/history", icon: History },
+  { title: "Prompts", url: "/prompts", icon: SlidersHorizontal },
+  { title: "Memory", url: "/memory", icon: Database },
 ];
 
 export function AppSidebar() {
