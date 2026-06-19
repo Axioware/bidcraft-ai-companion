@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SeedRouteImport } from './routes/seed'
 import { Route as PromptsRouteImport } from './routes/prompts'
+import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const SeedRoute = SeedRouteImport.update({
 const PromptsRoute = PromptsRouteImport.update({
   id: '/prompts',
   path: '/prompts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryRoute = MemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/memory': typeof MemoryRoute
   '/prompts': typeof PromptsRoute
   '/seed': typeof SeedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/memory': typeof MemoryRoute
   '/prompts': typeof PromptsRoute
   '/seed': typeof SeedRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
+  '/memory': typeof MemoryRoute
   '/prompts': typeof PromptsRoute
   '/seed': typeof SeedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/history' | '/prompts' | '/seed'
+  fullPaths: '/' | '/history' | '/memory' | '/prompts' | '/seed'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/history' | '/prompts' | '/seed'
-  id: '__root__' | '/' | '/history' | '/prompts' | '/seed'
+  to: '/' | '/history' | '/memory' | '/prompts' | '/seed'
+  id: '__root__' | '/' | '/history' | '/memory' | '/prompts' | '/seed'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HistoryRoute: typeof HistoryRoute
+  MemoryRoute: typeof MemoryRoute
   PromptsRoute: typeof PromptsRoute
   SeedRoute: typeof SeedRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/prompts'
       fullPath: '/prompts'
       preLoaderRoute: typeof PromptsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory': {
+      id: '/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof MemoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HistoryRoute: HistoryRoute,
+  MemoryRoute: MemoryRoute,
   PromptsRoute: PromptsRoute,
   SeedRoute: SeedRoute,
 }
