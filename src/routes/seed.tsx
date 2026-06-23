@@ -57,6 +57,7 @@ function SeedPage() {
           <Textarea
             id="bid"
             rows={10}
+            maxLength={10000}
             value={bidText}
             onChange={(e) => setBidText(e.target.value)}
             placeholder="Paste your winning bid here..."

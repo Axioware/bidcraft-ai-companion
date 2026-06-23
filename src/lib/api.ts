@@ -1,4 +1,4 @@
-export const API_BASE = "http://localhost:8000";
+export const API_BASE: string = import.meta.env.VITE_API_BASE ?? "";
 
 export interface ClientInfo {
   country?: string;

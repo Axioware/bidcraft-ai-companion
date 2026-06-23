@@ -117,6 +117,7 @@ function PromptsPage() {
                 <Label htmlFor="type">Type</Label>
                 <Input
                   id="type"
+                  maxLength={50}
                   value={newType}
                   onChange={(e) => setNewType(e.target.value)}
                   placeholder="custom_type"
@@ -126,6 +127,7 @@ function PromptsPage() {
                 <Label htmlFor="prompt">Prompt</Label>
                 <Textarea
                   id="prompt"
+                  maxLength={20000}
                   value={newPrompt}
                   onChange={(e) => setNewPrompt(e.target.value)}
                   className="min-h-[180px] font-mono text-xs"
@@ -185,6 +187,7 @@ function PromptsPage() {
                 </div>
                 <Textarea
                   value={draft}
+                  maxLength={20000}
                   onChange={(e) =>
                     setDrafts((prev) => ({ ...prev, [p.id]: e.target.value }))
                   }

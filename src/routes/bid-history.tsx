@@ -455,6 +455,7 @@ function BidHistoryPage() {
                 </p>
                 <Textarea
                   value={instruction}
+                  maxLength={1000}
                   onChange={(e) => setInstruction(e.target.value)}
                   placeholder="Make the opening more direct and mention my Shopify migration experience."
                   className="mt-3 min-h-[100px] resize-y"

@@ -29,7 +29,7 @@ export function JobForm({ value, onChange, children }: JobFormProps) {
 
   const addSkill = () => {
     const s = skillDraft.trim();
-    if (!s) return;
+    if (!s || value.skills.length >= 30) return;
     if (value.skills.includes(s)) {
       setSkillDraft("");
       return;
@@ -45,6 +45,7 @@ export function JobForm({ value, onChange, children }: JobFormProps) {
         <Input
           id="title"
           required
+          maxLength={200}
           value={value.title}
           onChange={(e) => update({ title: e.target.value })}
           placeholder="e.g. Full-stack developer for SaaS dashboard"
@@ -57,6 +58,7 @@ export function JobForm({ value, onChange, children }: JobFormProps) {
           id="desc"
           required
           rows={7}
+          maxLength={10000}
           value={value.description}
           onChange={(e) => update({ description: e.target.value })}
           placeholder="Paste the Upwork job description here..."
@@ -67,6 +69,7 @@ export function JobForm({ value, onChange, children }: JobFormProps) {
         <Label htmlFor="budget">Budget</Label>
         <Input
           id="budget"
+          maxLength={50}
           value={value.budget ?? ""}
           onChange={(e) => update({ budget: e.target.value })}
           placeholder="$500-800"
@@ -94,6 +97,7 @@ export function JobForm({ value, onChange, children }: JobFormProps) {
           ))}
           <input
             value={skillDraft}
+            maxLength={50}
             onChange={(e) => setSkillDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === ",") {
@@ -122,6 +126,7 @@ export function JobForm({ value, onChange, children }: JobFormProps) {
             <Label htmlFor="country">Country</Label>
             <Input
               id="country"
+              maxLength={100}
               value={value.client_info?.country ?? ""}
               onChange={(e) => updateClient({ country: e.target.value })}
               placeholder="United States"
@@ -131,6 +136,7 @@ export function JobForm({ value, onChange, children }: JobFormProps) {
             <Label htmlFor="hire">Hire Rate</Label>
             <Input
               id="hire"
+              maxLength={20}
               value={value.client_info?.hire_rate ?? ""}
               onChange={(e) => updateClient({ hire_rate: e.target.value })}
               placeholder="85%"
@@ -155,6 +161,7 @@ export function JobForm({ value, onChange, children }: JobFormProps) {
             <Label htmlFor="spent">Total Spent</Label>
             <Input
               id="spent"
+              maxLength={50}
               value={value.client_info?.total_spent ?? ""}
               onChange={(e) => updateClient({ total_spent: e.target.value })}
               placeholder="$12,000"
