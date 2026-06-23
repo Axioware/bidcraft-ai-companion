@@ -13,6 +13,7 @@ import { Route as SeedRouteImport } from './routes/seed'
 import { Route as PromptsRouteImport } from './routes/prompts'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as BidHistoryRouteImport } from './routes/bid-history'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SeedRoute = SeedRouteImport.update({
@@ -35,6 +36,11 @@ const HistoryRoute = HistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BidHistoryRoute = BidHistoryRouteImport.update({
+  id: '/bid-history',
+  path: '/bid-history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +49,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bid-history': typeof BidHistoryRoute
   '/history': typeof HistoryRoute
   '/memory': typeof MemoryRoute
   '/prompts': typeof PromptsRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bid-history': typeof BidHistoryRoute
   '/history': typeof HistoryRoute
   '/memory': typeof MemoryRoute
   '/prompts': typeof PromptsRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bid-history': typeof BidHistoryRoute
   '/history': typeof HistoryRoute
   '/memory': typeof MemoryRoute
   '/prompts': typeof PromptsRoute
@@ -65,14 +74,28 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/history' | '/memory' | '/prompts' | '/seed'
+  fullPaths:
+    | '/'
+    | '/bid-history'
+    | '/history'
+    | '/memory'
+    | '/prompts'
+    | '/seed'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/history' | '/memory' | '/prompts' | '/seed'
-  id: '__root__' | '/' | '/history' | '/memory' | '/prompts' | '/seed'
+  to: '/' | '/bid-history' | '/history' | '/memory' | '/prompts' | '/seed'
+  id:
+    | '__root__'
+    | '/'
+    | '/bid-history'
+    | '/history'
+    | '/memory'
+    | '/prompts'
+    | '/seed'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BidHistoryRoute: typeof BidHistoryRoute
   HistoryRoute: typeof HistoryRoute
   MemoryRoute: typeof MemoryRoute
   PromptsRoute: typeof PromptsRoute
@@ -109,6 +132,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bid-history': {
+      id: '/bid-history'
+      path: '/bid-history'
+      fullPath: '/bid-history'
+      preLoaderRoute: typeof BidHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,6 +151,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BidHistoryRoute: BidHistoryRoute,
   HistoryRoute: HistoryRoute,
   MemoryRoute: MemoryRoute,
   PromptsRoute: PromptsRoute,
@@ -129,13 +160,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

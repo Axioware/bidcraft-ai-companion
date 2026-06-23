@@ -45,6 +45,55 @@ export async function fetchJobBid(jobId: string): Promise<Bid> {
   return res.json();
 }
 
+export async function fetchJobBids(jobId: string): Promise<Bid[]> {
+  const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/bids`);
+  if (!res.ok) throw new Error("Failed to fetch bid versions");
+  return res.json();
+}
+
+export async function fetchJob(jobId: string): Promise<Job> {
+  const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}`);
+  if (!res.ok) throw new Error("Failed to fetch job");
+  return res.json();
+}
+
+export async function streamRevision(
+  jobId: string,
+  bidId: string,
+  instruction: string,
+  onEvent: (e: StreamEvent) => void,
+  signal: AbortSignal,
+) {
+  const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/bids/${bidId}/revise`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ instruction }),
+    signal,
+  });
+  if (!res.ok || !res.body) throw new Error("Revision stream failed");
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const data = trimmed.slice(5).trim();
+      if (!data) continue;
+      try {
+        onEvent(JSON.parse(data) as StreamEvent);
+      } catch {
+        // ignore malformed
+      }
+    }
+  }
+}
+
 export async function seedBid(payload: JobPayload & { bid_text: string }) {
   const res = await fetch(`${API_BASE}/api/v1/bids/seed`, {
     method: "POST",
