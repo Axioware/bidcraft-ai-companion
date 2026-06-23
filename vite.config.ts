@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Enables the nitro deploy adapter for non-sandbox builds.
+  // Lovable's sandbox ignores this and forces cloudflare-module automatically.
+  nitro: { preset: "vercel" },
 });
