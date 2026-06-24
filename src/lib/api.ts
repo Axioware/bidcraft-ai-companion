@@ -1,18 +1,33 @@
-export const API_BASE: string = import.meta.env.VITE_API_BASE ?? "";
+export const API_BASE: string =
+  import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE ?? "";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface Profile {
+  id: string;
+  name: string;
+  bio?: string;
+  skills?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Project {
+  id: string;
+  profile_id: string;
+  title: string;
+  description: string;
+  skills?: string[];
+  tech_stack?: string[];
+  outcome?: string;
+  created_at: string;
+}
 
 export interface ClientInfo {
   country?: string;
   hire_rate?: string;
   reviews?: number | null;
   total_spent?: string;
-}
-
-export interface JobPayload {
-  title: string;
-  description: string;
-  budget?: string;
-  skills: string[];
-  client_info?: ClientInfo;
 }
 
 export interface Job {
@@ -22,6 +37,7 @@ export interface Job {
   budget?: string;
   skills: string[];
   client_info?: ClientInfo;
+  profile_id?: string;
   created_at: string;
 }
 
@@ -33,44 +49,40 @@ export interface Bid {
   created_at: string;
 }
 
-export async function fetchJobs(skip = 0, limit = 20): Promise<Job[]> {
-  const res = await fetch(`${API_BASE}/api/v1/jobs/?skip=${skip}&limit=${limit}`);
-  if (!res.ok) throw new Error("Failed to fetch jobs");
-  return res.json();
+export interface ConversationMessage {
+  memory_type: "bid_generation" | "bid_revision";
+  bid: Bid;
+  user_instruction?: string;
 }
 
-export async function fetchJobBid(jobId: string): Promise<Bid> {
-  const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/bid`);
-  if (!res.ok) throw new Error("Failed to fetch bid");
-  return res.json();
+export interface Conversation {
+  job: Job;
+  messages: ConversationMessage[];
 }
 
-export async function fetchJobBids(jobId: string): Promise<Bid[]> {
-  const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/bids`);
-  if (!res.ok) throw new Error("Failed to fetch bid versions");
-  return res.json();
+export interface StreamEvent {
+  type: "chunk" | "done";
+  content?: string;
+  bid_id?: string;
+  job_id?: string;
 }
 
-export async function fetchJob(jobId: string): Promise<Job> {
-  const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}`);
-  if (!res.ok) throw new Error("Failed to fetch job");
-  return res.json();
+export interface GenerateBidPayload {
+  title: string;
+  description: string;
+  budget?: string;
+  skills?: string[];
+  client_info?: ClientInfo;
+  profile_id?: string;
 }
 
-export async function streamRevision(
-  jobId: string,
-  bidId: string,
-  instruction: string,
+// ─── Streaming helper ─────────────────────────────────────────────────────────
+
+async function consumeStream(
+  res: Response,
   onEvent: (e: StreamEvent) => void,
-  signal: AbortSignal,
-) {
-  const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/bids/${bidId}/revise`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ instruction }),
-    signal,
-  });
-  if (!res.ok || !res.body) throw new Error("Revision stream failed");
+): Promise<void> {
+  if (!res.body) throw new Error("No response body");
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -88,21 +100,55 @@ export async function streamRevision(
       try {
         onEvent(JSON.parse(data) as StreamEvent);
       } catch {
-        // ignore malformed
+        // ignore malformed events
       }
     }
   }
 }
 
-export async function seedBid(payload: JobPayload & { bid_text: string }) {
-  const res = await fetch(`${API_BASE}/api/v1/bids/seed`, {
+// ─── Profile APIs ─────────────────────────────────────────────────────────────
+
+export async function fetchProfiles(): Promise<Profile[]> {
+  const res = await fetch(`${API_BASE}/api/v1/profiles`);
+  if (!res.ok) throw new Error("Failed to fetch profiles");
+  return res.json();
+}
+
+export async function createProfile(data: {
+  name: string;
+  bio?: string;
+  skills?: string[];
+}): Promise<Profile> {
+  const res = await fetch(`${API_BASE}/api/v1/profiles`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to seed bid");
-  return res.json() as Promise<{ job_id: string; bid_id: string; message: string }>;
+  if (!res.ok) throw new Error("Failed to create profile");
+  return res.json();
 }
+
+export async function updateProfile(
+  id: string,
+  data: { name?: string; bio?: string; skills?: string[] },
+): Promise<Profile> {
+  const res = await fetch(`${API_BASE}/api/v1/profiles/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update profile");
+  return res.json();
+}
+
+export async function deleteProfile(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/profiles/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete profile");
+}
+
+// ─── Prompt type ─────────────────────────────────────────────────────────────
 
 export interface Prompt {
   id: string;
@@ -111,6 +157,65 @@ export interface Prompt {
   created_at: string;
   updated_at: string;
 }
+
+// ─── Project APIs ─────────────────────────────────────────────────────────────
+
+export async function fetchProjects(profileId?: string): Promise<Project[]> {
+  const params = new URLSearchParams();
+  if (profileId) params.set("profile_id", profileId);
+  const query = params.toString();
+  const res = await fetch(
+    `${API_BASE}/api/v1/projects${query ? `?${query}` : ""}`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch projects");
+  return res.json();
+}
+
+export async function createProject(data: {
+  title: string;
+  description: string;
+  skills?: string[];
+  tech_stack?: string[];
+  outcome?: string;
+  profile_id: string;
+}): Promise<Project> {
+  const res = await fetch(`${API_BASE}/api/v1/projects`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create project");
+  return res.json();
+}
+
+export async function updateProject(
+  id: string,
+  data: {
+    title?: string;
+    description?: string;
+    skills?: string[];
+    tech_stack?: string[];
+    outcome?: string;
+    profile_id?: string;
+  },
+): Promise<Project> {
+  const res = await fetch(`${API_BASE}/api/v1/projects/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update project");
+  return res.json();
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/v1/projects/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete project");
+}
+
+// ─── Prompt APIs ──────────────────────────────────────────────────────────────
 
 export async function fetchPrompts(): Promise<Prompt[]> {
   const res = await fetch(`${API_BASE}/api/v1/prompts`);
@@ -138,61 +243,60 @@ export async function createPrompt(type: string, prompt: string): Promise<Prompt
   return res.json();
 }
 
-export interface MemoryEntry {
-  id: string;
-  job_id: string | null;
-  bid_id: string | null;
-  user_message: string;
-  ai_response: string;
-  memory_type: string;
-  metadata: Record<string, unknown>;
-  created_at: string;
-}
+// ─── Job APIs ─────────────────────────────────────────────────────────────────
 
-export async function fetchMemory(skip = 0, limit = 20): Promise<MemoryEntry[]> {
-  const res = await fetch(`${API_BASE}/api/v1/memory?skip=${skip}&limit=${limit}`);
-  if (!res.ok) throw new Error("Failed to fetch memory");
+export async function fetchJobs(
+  profileId?: string,
+  limit = 50,
+): Promise<Job[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (profileId) params.set("profile_id", profileId);
+  const res = await fetch(`${API_BASE}/api/v1/jobs?${params}`);
+  if (!res.ok) throw new Error("Failed to fetch jobs");
   return res.json();
 }
 
-export interface StreamEvent {
-  type: "chunk" | "done";
-  content?: string;
-  bid_id?: string;
-  job_id?: string;
+export async function fetchJobConversation(
+  jobId: string,
+): Promise<Conversation> {
+  const res = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/conversation`);
+  if (!res.ok) throw new Error("Failed to fetch conversation");
+  return res.json();
 }
 
-export async function streamBid(
-  payload: JobPayload,
+// ─── Streaming APIs ───────────────────────────────────────────────────────────
+
+export async function streamGenerateBid(
+  payload: GenerateBidPayload,
   onEvent: (e: StreamEvent) => void,
   signal: AbortSignal,
-) {
+): Promise<void> {
   const res = await fetch(`${API_BASE}/api/v1/jobs/generate-bid`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
     signal,
   });
-  if (!res.ok || !res.body) throw new Error("Stream failed");
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data:")) continue;
-      const data = trimmed.slice(5).trim();
-      if (!data) continue;
-      try {
-        onEvent(JSON.parse(data) as StreamEvent);
-      } catch {
-        // ignore malformed
-      }
-    }
-  }
+  if (!res.ok || !res.body) throw new Error("Failed to start bid stream");
+  await consumeStream(res, onEvent);
+}
+
+export async function streamRevision(
+  jobId: string,
+  bidId: string,
+  instruction: string,
+  onEvent: (e: StreamEvent) => void,
+  signal: AbortSignal,
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/jobs/${jobId}/bids/${bidId}/revise`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ instruction }),
+      signal,
+    },
+  );
+  if (!res.ok || !res.body) throw new Error("Failed to start revision stream");
+  await consumeStream(res, onEvent);
 }
