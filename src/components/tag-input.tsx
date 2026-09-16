@@ -31,12 +31,12 @@ export function TagInput({
 
   return (
     <div
-      className={`flex flex-wrap gap-1.5 rounded-md border border-input bg-input/40 px-2 py-1.5 focus-within:ring-1 focus-within:ring-ring min-h-[38px] ${className}`}
+      className={`flex min-h-10 flex-wrap gap-1.5 rounded-md border border-input bg-input/60 px-2 py-1.5 transition-colors hover:border-ring/40 focus-within:ring-1 focus-within:ring-ring ${className}`}
     >
       {value.map((tag) => (
         <span
           key={tag}
-          className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
+          className="inline-flex items-center gap-1 rounded-sm border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs text-primary"
         >
           {tag}
           <button
